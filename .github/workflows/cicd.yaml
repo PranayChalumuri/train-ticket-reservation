@@ -39,15 +39,29 @@ jobs:
       - name: Verify WAR file  # FIXED: Check root target/
         run: ls -lh target/
       
-      - name: Deploy to Tomcat  # FIXED: Use target/*.war (not MyWebApp/target/)
+      - # Add after "Verify WAR file":
+         # Add after "Verify WAR file":
+      - name: Test Tomcat connectivity
         run: |
-          # Find actual WAR name (usually project-artifactId-version.war)
-          WAR_FILE=$(ls target/*.war | head -1)
-          echo "Deploying $WAR_FILE"
-          
+          echo "Testing http://${{ secrets.TOMCAT_HOST }}/manager/text/status"
+          timeout 30 curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
+          --max-time 30 \
+          "http://${{ secrets.TOMCAT_HOST }}/manager/text/status?text=true" || \
+          echo "HTTP failed, trying HTTPS..."
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
-            -T "$WAR_FILE" \
-            "http://${{ secrets.TOMCAT_HOST }}/manager/text/deploy?path=/MyWebApp&update=true"
+          --max-time 30 \
+          "https://${{ secrets.TOMCAT_HOST }}/manager/text/status?text=true"
+
+      - name: Deploy to Tomcat
+        run: |
+         WAR_FILE=$(ls target/*.war | head -1)
+         echo "Deploying $WAR_FILE to http://${{ secrets.TOMCAT_HOST }}"
+    
+         curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
+         -T "$WAR_FILE" \
+         --max-time 60 \
+         "http://${{ secrets.TOMCAT_HOST }}/manager/text/deploy?path=/MyWebApp&update=true"
+
 
 
         
