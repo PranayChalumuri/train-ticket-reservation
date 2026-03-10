@@ -1,0 +1,12 @@
+name: Test Variables
+on:
+  workflow_dispatch:
+jobs:
+  test-variables:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if variables are accessible
+        run: |
+          echo "DEV_HOST: ${{ vars.DEV_HOST }}"
+          echo "DEV_USER: ${{ vars.DEV_USER }}"
+          echo "DEV_PASSWORD: ${{ vars.DEV_PASSWORD }}"
