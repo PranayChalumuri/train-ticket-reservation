@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: DEV
-      url: http://${{ secrets.DEV_HOST }}:8080/myapp
+      url: http://${{ secrets.DEV_HOST }}:8080
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v4
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: TEST
-      url: http://${{ secrets.TEST_HOST }}:8080/myapp
+      url: http://${{ secrets.TEST_HOST }}:8080
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v4
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: PROD
-      url: http://${{ secrets.PROD_HOST }}:8080/myapp
+      url: http://${{ secrets.PROD_HOST }}:8080
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v4
