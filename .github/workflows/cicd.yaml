@@ -3,7 +3,7 @@ name: CI/CD Deploy to Tomcat
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:  # Allow manual triggers
 
 jobs:
