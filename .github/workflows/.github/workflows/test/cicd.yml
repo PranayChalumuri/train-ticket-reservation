@@ -1,20 +1,14 @@
-name: Test Secrets
+name: Test Variables
+
 on:
   workflow_dispatch:
+
 jobs:
-  test-secrets:
+  test-variables:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if secrets are accessible
+      - name: Check if variables are accessible
         run: |
-          if [ -n "${{ secrets.DEV_HOST }}" ]; then
-            echo "DEV_HOST is set"
-          else
-            echo "DEV_HOST is NOT set"
-          fi
-          
-          if [ -n "${{ secrets.DEV_USER }}" ]; then
-            echo "DEV_USER is set" 
-          else
-            echo "DEV_USER is NOT set"
-          fi
+          echo "DEV_HOST: ${{ vars.DEV_HOST }}"
+          echo "DEV_USER: ${{ vars.DEV_USER }}"
+          echo "DEV_PASSWORD: ${{ vars.DEV_PASSWORD }}"
