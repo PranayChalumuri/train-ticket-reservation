@@ -1,0 +1,20 @@
+name: Test Secrets
+on:
+  workflow_dispatch:
+jobs:
+  test-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if secrets are accessible
+        run: |
+          if [ -n "${{ secrets.DEV_HOST }}" ]; then
+            echo "DEV_HOST is set"
+          else
+            echo "DEV_HOST is NOT set"
+          fi
+          
+          if [ -n "${{ secrets.DEV_USER }}" ]; then
+            echo "DEV_USER is set" 
+          else
+            echo "DEV_USER is NOT set"
+          fi
