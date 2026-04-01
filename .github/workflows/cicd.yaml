@@ -2,7 +2,7 @@ name: Full DevSecOps Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build-scan-deploy:
