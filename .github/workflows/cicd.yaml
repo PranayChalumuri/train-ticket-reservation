@@ -1,84 +1,54 @@
-name: CI/CD Deploy to Tomcat
+name: Full DevSecOps Pipeline
+
 on:
   push:
-    branches:
-      - master
-  workflow_dispatch:  # Allow manual triggers
+    branches: [ main ]
 
 jobs:
-  # BUILD JOB - Compile and package the application
-  build:
+  build-scan-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
 
-      - name: Build WAR
-        run: mvn clean package
+    - name: Build & Test
+      run: mvn clean verify
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: myapp
-          path: target/*.war
+    - name: SonarQube Scan
+      run: |
+        mvn sonar:sonar \
+        -Dsonar.projectKey=train-ticket-reservation \
+        -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+        -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-  # DEPLOY TO DEVELOPMENT
-  deploy-dev:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: 
-      name: DEV
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: myapp
+    - name: Publish to Nexus
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml <<EOF
+        <settings>
+          <servers>
+            <server>
+              <id>nexus</id>
+              <username>${{ secrets.NEXUS_USERNAME }}</username>
+              <password>${{ secrets.NEXUS_PASSWORD }}</password>
+            </server>
+          </servers>
+        </settings>
+        EOF
 
-      - name: Deploy to DEV Server
-        run: |
-          curl -u ${{ secrets.DEV_USER }}:${{ secrets.DEV_PASSWORD }} \
-            --upload-file *.war \
-            "http://${{ secrets.DEV_HOST }}:8080/manager/text/deploy?path=/myapp&update=true"
+        mvn deploy \
+        -DskipTests \
+        -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_URL }}/repository/${{ secrets.NEXUS_REPOSITORY }}/
 
-  # DEPLOY TO TEST (requires manual approval)
-  deploy-test:
-    needs: deploy-dev
-    runs-on: ubuntu-latest
-    environment: 
-      name: TEST
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: myapp
-
-      - name: Deploy to TEST Server
-        run: |
-          curl -u ${{ secrets.TEST_USER }}:${{ secrets.TEST_PASSWORD }} \
-            --upload-file *.war \
-            "http://${{ secrets.TEST_HOST }}:8080/manager/text/deploy?path=/myapp&update=true"
-
-  # DEPLOY TO PRODUCTION (requires manual approval)
-  deploy-prod:
-    needs: deploy-test
-    runs-on: ubuntu-latest
-    environment: 
-      name: PROD
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: myapp
-
-      - name: Deploy to PROD Server
-        run: |
-          curl -u ${{ secrets.PROD_USER }}:${{ secrets.PROD_PASSWORD }} \
-            --upload-file *.war \
-            "http://${{ secrets.PROD_HOST }}:8080/manager/text/deploy?path=/myapp&update=true"
+    - name: Deploy to Tomcat
+      run: |
+        curl -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
+        -T target/*.war \
+        "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/myapp&update=true"
